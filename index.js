@@ -10,7 +10,7 @@ const client = new Client({
   ],
 });
 
-let messageInterval = 6 * 60 * 60 * 1000; // Default interval: 6 hours
+let messageInterval = 24 * 60 * 60 * 1000; // Default interval: 24 hours
 let intervalId;
 
 // Function to send a random trading wisdom
