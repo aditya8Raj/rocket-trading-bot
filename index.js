@@ -1,5 +1,6 @@
 require("dotenv").config(); // Load environment variables
 const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
+const tradingWisdom = require("./quotes");
 
 const client = new Client({
   intents: [
@@ -8,18 +9,6 @@ const client = new Client({
     GatewayIntentBits.MessageContent,
   ],
 });
-
-// Predefined list of trading wisdom quotes (first 5 are permanent)
-const tradingWisdom = [
-  "The market is always right.",
-  "Cut your losses short and let your profits run.",
-  "Plan your trade and trade your plan.",
-  "Risk management is the key to survival.",
-  "Emotion is the enemy of the trader.",
-  "Trade what you see, not what you think.",
-  "Always have a stop-loss.",
-  "Diversify your portfolio.",
-];
 
 let messageInterval = 6 * 60 * 60 * 1000; // Default interval: 6 hours
 let intervalId;
@@ -53,7 +42,7 @@ client.once("ready", () => {
   console.log(`Logged in as ${client.user.tag}`);
 
   // Start the interval with the default time
-  const channel = client.channels.cache.get("1343627298674442290"); // Replace with your channel ID
+  const channel = client.channels.cache.get("1337209276661239860"); // Replace with your channel ID
   startInterval(channel);
 });
 
