@@ -10,8 +10,8 @@ const client = new Client({
   ],
 });
 
-let messageInterval = 24 * 60 * 60 * 1000; // Default interval: 24 hours
-let intervalId;
+// Store channel-specific settings
+const channelSettings = new Map(); // Format: { channelID: { interval: number, intervalId: NodeJS.Timeout } }
 
 // Function to send a random trading wisdom
 function sendRandomWisdom(channel) {
@@ -24,26 +24,37 @@ function sendRandomWisdom(channel) {
       .setColor("#00FF00");
 
     channel.send({ embeds: [embed] });
-    console.log(`Sent message: ${randomQuote}`);
+    console.log(`Sent message to ${channel.id}: ${randomQuote}`);
   } catch (error) {
     console.error("Error sending message:", error);
   }
 }
 
-// Function to start the interval
-function startInterval(channel) {
-  if (intervalId) clearInterval(intervalId); // Clear existing interval
-  intervalId = setInterval(() => sendRandomWisdom(channel), messageInterval);
-  console.log(`Interval set to ${messageInterval / 1000} seconds`);
+// Function to start the interval for a specific channel
+function startInterval(channelId, interval) {
+  const channel = client.channels.cache.get(channelId);
+  if (!channel) {
+    console.error(`Channel ${channelId} not found.`);
+    return;
+  }
+
+  // Clear existing interval if it exists
+  if (channelSettings.has(channelId)) {
+    clearInterval(channelSettings.get(channelId).intervalId);
+  }
+
+  // Start a new interval
+  const intervalId = setInterval(() => sendRandomWisdom(channel), interval);
+  channelSettings.set(channelId, { interval, intervalId });
+
+  console.log(
+    `Interval set for channel ${channelId}: ${interval / 1000} seconds`
+  );
 }
 
 // Bot ready event
 client.once("ready", () => {
   console.log(`Logged in as ${client.user.tag}`);
-
-  // Start the interval with the default time
-  const channel = client.channels.cache.get("1337209276661239860"); // Replace with your channel ID
-  startInterval(channel);
 });
 
 // Login to Discord
@@ -66,15 +77,44 @@ client.on("messageCreate", async (message) => {
     sendRandomWisdom(message.channel);
   }
 
+  // !setchannel command
+  if (message.content.startsWith("!setchannel")) {
+    const channelId = message.content.split(" ")[1];
+    if (!channelId) {
+      message.reply("Usage: `!setchannel <channelID>`");
+      return;
+    }
+
+    const channel = client.channels.cache.get(channelId);
+    if (!channel) {
+      message.reply("Invalid channel ID. Please provide a valid channel ID.");
+      return;
+    }
+
+    // Initialize settings for the channel
+    if (!channelSettings.has(channelId)) {
+      channelSettings.set(channelId, {
+        interval: 24 * 60 * 60 * 1000,
+        intervalId: null,
+      }); // Default interval: 24 hours
+      startInterval(channelId, 24 * 60 * 60 * 1000); // Start the interval
+    }
+
+    message.reply(`Channel set to <#${channelId}>. Quotes will be sent here.`);
+  }
+
   // !setinterval command
   if (message.content.startsWith("!setinterval")) {
-    const timeString = message.content.split(" ")[1]; // Get the time argument
-    if (!timeString) {
+    const args = message.content.split(" ");
+    if (args.length < 3) {
       message.reply(
-        "Usage: `!setinterval <time>` (e.g., `!setinterval 1h`, `!setinterval 30m`, `!setinterval 10s`)"
+        "Usage: `!setinterval <time> <channelID>` (e.g., `!setinterval 1h 123456789012345678`)"
       );
       return;
     }
+
+    const timeString = args[1];
+    const channelId = args[2];
 
     // Parse the time string
     const timeUnit = timeString.slice(-1); // Get the last character (h, m, s)
@@ -82,21 +122,22 @@ client.on("messageCreate", async (message) => {
 
     if (isNaN(timeValue)) {
       message.reply(
-        "Invalid time format. Use `!setinterval <time>` (e.g., `!setinterval 1h`, `!setinterval 30m`, `!setinterval 10s`)"
+        "Invalid time format. Use `h` for hours, `m` for minutes, or `s` for seconds."
       );
       return;
     }
 
     // Convert to milliseconds
+    let interval;
     switch (timeUnit) {
       case "h":
-        messageInterval = timeValue * 60 * 60 * 1000;
+        interval = timeValue * 60 * 60 * 1000;
         break;
       case "m":
-        messageInterval = timeValue * 60 * 1000;
+        interval = timeValue * 60 * 1000;
         break;
       case "s":
-        messageInterval = timeValue * 1000;
+        interval = timeValue * 1000;
         break;
       default:
         message.reply(
@@ -105,9 +146,36 @@ client.on("messageCreate", async (message) => {
         return;
     }
 
-    // Restart the interval with the new time
-    startInterval(message.channel);
-    message.reply(`Interval set to ${timeString}`);
+    // Update the interval for the channel
+    if (!channelSettings.has(channelId)) {
+      message.reply("Channel not set. Use `!setchannel <channelID>` first.");
+      return;
+    }
+
+    startInterval(channelId, interval);
+    message.reply(`Interval set to ${timeString} for <#${channelId}>.`);
+  }
+
+  // !listchannels command
+  if (message.content === "!listchannels") {
+    if (channelSettings.size === 0) {
+      message.reply("No channels are currently set for quotes.");
+      return;
+    }
+
+    const channelsList = Array.from(channelSettings.entries())
+      .map(([channelId, settings]) => {
+        const intervalHours = settings.interval / (60 * 60 * 1000);
+        return `<#${channelId}>: Every ${intervalHours} hours`;
+      })
+      .join("\n");
+
+    const embed = new EmbedBuilder()
+      .setTitle("Active Channels for Quotes")
+      .setDescription(channelsList)
+      .setColor("#00FF00");
+
+    message.reply({ embeds: [embed] });
   }
 
   // !addquote command
@@ -168,9 +236,17 @@ client.on("messageCreate", async (message) => {
       .addFields(
         { name: "!wisdom", value: "Sends a random trading wisdom message." },
         {
-          name: "!setinterval <time>",
+          name: "!setchannel <channelID>",
+          value: "Sets the channel where quotes will be sent.",
+        },
+        {
+          name: "!setinterval <time> <channelID>",
           value:
-            "Sets the interval for automatic messages (e.g., `!setinterval 1h`, `!setinterval 30m`, `!setinterval 10s`).",
+            "Sets the interval for automatic messages in a specific channel (e.g., `!setinterval 1h 123456789012345678`).",
+        },
+        {
+          name: "!listchannels",
+          value: "Lists all channels where quotes are being sent.",
         },
         {
           name: "!addquote <quote>",
