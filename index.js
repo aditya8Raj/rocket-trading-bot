@@ -20,7 +20,7 @@ function sendRandomWisdom(channel) {
       tradingWisdom[Math.floor(Math.random() * tradingWisdom.length)];
     const embed = new EmbedBuilder()
       .setTitle("Trading Wisdom 💡")
-      .setDescription("## " + randomQuote)
+      .setDescription("## *" + randomQuote + "*")
       .setColor("#00FF00");
 
     channel.send({ embeds: [embed] });
