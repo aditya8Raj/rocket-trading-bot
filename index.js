@@ -182,6 +182,28 @@ client.on("messageCreate", async (message) => {
     message.reply(`Interval set to ${timeString} for <#${channelId}>.`);
   }
 
+  // !listchannels command
+  if (message.content === "!listchannels") {
+    if (channelSettings.size === 0) {
+      message.reply("No channels are currently set for quotes.");
+      return;
+    }
+
+    const channelsList = Array.from(channelSettings.entries())
+      .map(([channelId, settings]) => {
+        const intervalHours = settings.interval / (60 * 60 * 1000);
+        return `<#${channelId}>: Every ${intervalHours} hours`;
+      })
+      .join("\n");
+
+    const embed = new EmbedBuilder()
+      .setTitle("Active Channels for Quotes")
+      .setDescription(channelsList)
+      .setColor("#00FF00");
+
+    message.reply({ embeds: [embed] });
+  }
+
   // !addquote command
   if (message.content.startsWith("!addquote")) {
     const quote = message.content.slice("!addquote ".length).trim();
@@ -249,6 +271,10 @@ client.on("messageCreate", async (message) => {
           name: "!setinterval <time> <channelID>",
           value:
             "Sets the interval for automatic messages in a specific channel (e.g., `!setinterval 1h 123456789012345678`).",
+        },
+        {
+          name: "!listchannels",
+          value: "Lists all channels where quotes are being sent.",
         },
         {
           name: "!addquote <quote>",
