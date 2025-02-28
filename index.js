@@ -1,6 +1,20 @@
 require("dotenv").config(); // Load environment variables
 const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
-const tradingWisdom = require("./quotes");
+const fs = require("fs"); // For reading/writing JSON file
+const tradingWisdom = require("./quotes"); // Initial quotes
+
+// File to store persistent data
+const dataFilePath = "./data.json";
+
+// Load data from file (if it exists)
+let channelSettings = new Map();
+let quotes = [...tradingWisdom]; // Start with initial quotes
+
+if (fs.existsSync(dataFilePath)) {
+  const data = JSON.parse(fs.readFileSync(dataFilePath, "utf8"));
+  channelSettings = new Map(data.channelSettings);
+  quotes = data.tradingWisdom;
+}
 
 const client = new Client({
   intents: [
@@ -10,14 +24,20 @@ const client = new Client({
   ],
 });
 
-// Store channel-specific settings
-const channelSettings = new Map(); // Format: { channelID: { interval: number, intervalId: NodeJS.Timeout } }
+// Function to save data to JSON file
+function saveData() {
+  const data = {
+    channelSettings: Array.from(channelSettings.entries()),
+    tradingWisdom: quotes,
+  };
+  fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2));
+  console.log("Data saved to data.json");
+}
 
 // Function to send a random trading wisdom
 function sendRandomWisdom(channel) {
   try {
-    const randomQuote =
-      tradingWisdom[Math.floor(Math.random() * tradingWisdom.length)];
+    const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
     const embed = new EmbedBuilder()
       .setTitle("Trading Wisdom 💡")
       .setDescription("## " + randomQuote)
@@ -50,11 +70,17 @@ function startInterval(channelId, interval) {
   console.log(
     `Interval set for channel ${channelId}: ${interval / 1000} seconds`
   );
+  saveData(); // Save updated channel settings
 }
 
 // Bot ready event
 client.once("ready", () => {
   console.log(`Logged in as ${client.user.tag}`);
+
+  // Start intervals for all saved channels
+  for (const [channelId, settings] of channelSettings.entries()) {
+    startInterval(channelId, settings.interval);
+  }
 });
 
 // Login to Discord
@@ -156,28 +182,6 @@ client.on("messageCreate", async (message) => {
     message.reply(`Interval set to ${timeString} for <#${channelId}>.`);
   }
 
-  // !listchannels command
-  if (message.content === "!listchannels") {
-    if (channelSettings.size === 0) {
-      message.reply("No channels are currently set for quotes.");
-      return;
-    }
-
-    const channelsList = Array.from(channelSettings.entries())
-      .map(([channelId, settings]) => {
-        const intervalHours = settings.interval / (60 * 60 * 1000);
-        return `<#${channelId}>: Every ${intervalHours} hours`;
-      })
-      .join("\n");
-
-    const embed = new EmbedBuilder()
-      .setTitle("Active Channels for Quotes")
-      .setDescription(channelsList)
-      .setColor("#00FF00");
-
-    message.reply({ embeds: [embed] });
-  }
-
   // !addquote command
   if (message.content.startsWith("!addquote")) {
     const quote = message.content.slice("!addquote ".length).trim();
@@ -186,9 +190,10 @@ client.on("messageCreate", async (message) => {
       return;
     }
 
-    tradingWisdom.push(quote);
+    quotes.push(quote);
     message.reply(`Added quote: ${quote}`);
     console.log(`Added quote: ${quote}`);
+    saveData(); // Save updated quotes
   }
 
   // !removequote command
@@ -204,19 +209,20 @@ client.on("messageCreate", async (message) => {
       return;
     }
 
-    if (index >= tradingWisdom.length) {
+    if (index >= quotes.length) {
       message.reply("Invalid index. No quote found at that position.");
       return;
     }
 
-    const removedQuote = tradingWisdom.splice(index, 1)[0];
+    const removedQuote = quotes.splice(index, 1)[0];
     message.reply(`Removed quote: "${removedQuote}"`);
     console.log(`Removed quote: "${removedQuote}"`);
+    saveData(); // Save updated quotes
   }
 
   // !listquotes command
   if (message.content === "!listquotes") {
-    const quotesList = tradingWisdom
+    const quotesList = quotes
       .map((quote, index) => `${index}. ${quote}`)
       .join("\n");
 
@@ -243,10 +249,6 @@ client.on("messageCreate", async (message) => {
           name: "!setinterval <time> <channelID>",
           value:
             "Sets the interval for automatic messages in a specific channel (e.g., `!setinterval 1h 123456789012345678`).",
-        },
-        {
-          name: "!listchannels",
-          value: "Lists all channels where quotes are being sent.",
         },
         {
           name: "!addquote <quote>",
