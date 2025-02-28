@@ -28,3 +28,32 @@ package-lock.json
 
 # Ignore local development files
 *.local
+
+# ---------------
+# Ignore environment variables
+.env
+
+# Ignore persistent data file
+data.json
+
+# Ignore node_modules folder
+node_modules/
+
+# Ignore logs
+logs/
+*.log
+
+# Ignore npm debug logs
+npm-debug.log*
+
+# Ignore IDE-specific files
+.vscode/
+.idea/
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore build artifacts
+dist/
+build/
