@@ -1,6 +1,7 @@
 require("dotenv").config(); // Load environment variables
 const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
 const tradingWisdom = require("./quotes");
+const schedule = require("node-schedule");
 
 const client = new Client({
   intents: [
@@ -10,8 +11,7 @@ const client = new Client({
   ],
 });
 
-let messageInterval = 24 * 60 * 60 * 1000; // Default interval: 24 hours
-let intervalId;
+const channelIds = ["1337209276661239860", "1334610731487858900"];
 
 // Function to send a random trading wisdom
 function sendRandomWisdom(channel) {
@@ -30,20 +30,28 @@ function sendRandomWisdom(channel) {
   }
 }
 
-// Function to start the interval
-function startInterval(channel) {
-  if (intervalId) clearInterval(intervalId); // Clear existing interval
-  intervalId = setInterval(() => sendRandomWisdom(channel), messageInterval);
-  console.log(`Interval set to ${messageInterval / 1000} seconds`);
+// Function to schedule daily messages
+function scheduleDailyMessage() {
+  const job = schedule.scheduleJob(
+    { hour: 10, minute: 0, tz: "America/New_York" },
+    () => {
+      channelIds.forEach((channelId) => {
+        const channel = client.channels.cache.get(channelId);
+        if (channel) {
+          sendRandomWisdom(channel);
+        } else {
+          console.error(`Channel with ID ${channelId} not found`);
+        }
+      });
+    }
+  );
+  console.log("Scheduled daily messages at 10:00 am EST");
 }
 
 // Bot ready event
 client.once("ready", () => {
   console.log(`Logged in as ${client.user.tag}`);
-
-  // Start the interval with the default time
-  const channel = client.channels.cache.get("1337209276661239860"); // Replace with your channel ID
-  startInterval(channel);
+  scheduleDailyMessage();
 });
 
 // Login to Discord
@@ -88,6 +96,7 @@ client.on("messageCreate", async (message) => {
     }
 
     // Convert to milliseconds
+    let messageInterval;
     switch (timeUnit) {
       case "h":
         messageInterval = timeValue * 60 * 60 * 1000;
