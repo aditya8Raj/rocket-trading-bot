@@ -33,7 +33,7 @@ function sendRandomWisdom(channel) {
 // Function to schedule daily messages
 function scheduleDailyMessage() {
   const job = schedule.scheduleJob(
-    { hour: 10, minute: 0, tz: "America/New_York" },
+    { hour: 9, minute: 58, tz: "America/New_York" },
     () => {
       channelIds.forEach((channelId) => {
         const channel = client.channels.cache.get(channelId);
@@ -45,7 +45,7 @@ function scheduleDailyMessage() {
       });
     }
   );
-  console.log("Scheduled daily messages at 10:00 am EST");
+  console.log("Scheduled daily messages at 9:58 am EST");
 }
 
 // Bot ready event
