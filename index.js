@@ -11,6 +11,7 @@ const client = new Client({
   ],
 });
 
+// replace the channel IDs with your own
 const channelIds = ["1337209276661239860", "1334610731487858900"];
 
 // Function to send a random trading wisdom
