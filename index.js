@@ -173,7 +173,7 @@ client.on("messageCreate", async (message) => {
   // !help command
   if (message.content === "!help") {
     const helpEmbed = new EmbedBuilder()
-      .setTitle("Trade Sage Bot Commands")
+      .setTitle("Bot Commands")
       .setDescription("Here are all the available commands:")
       .addFields(
         { name: "!wisdom", value: "Sends a random trading wisdom message." },

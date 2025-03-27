@@ -1,6 +1,6 @@
-# Trade Sage
+# Rocket Trading Bot
 
-Trade Sage is a Discord bot designed to provide trading wisdom and insights to users. The bot sends random trading quotes to specified channels and allows administrators to manage quotes and message intervals.
+Rocket Trading Bot is a Discord bot designed to provide trading wisdom and insights to users. The bot sends random trading quotes to specified channels and allows administrators to manage quotes and message intervals.
 
 ## Features
 
@@ -14,8 +14,8 @@ Trade Sage is a Discord bot designed to provide trading wisdom and insights to u
 1. Clone the repository:
 
    ```sh
-   git clone https://github.com/yourusername/trade-sage.git
-   cd trade-sage
+   git clone https://github.com/aditya8raj/rocket-trading-bot.git
+   cd rocket-trading-bot
    ```
 
 2. Install dependencies:
