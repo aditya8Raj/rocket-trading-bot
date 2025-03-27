@@ -33,20 +33,38 @@ function sendRandomWisdom(channel) {
 
 // Function to schedule daily messages
 function scheduleDailyMessage() {
-  const job = schedule.scheduleJob(
-    { hour: 9, minute: 58, tz: "America/New_York" },
-    () => {
-      channelIds.forEach((channelId) => {
-        const channel = client.channels.cache.get(channelId);
-        if (channel) {
-          sendRandomWisdom(channel);
-        } else {
-          console.error(`Channel with ID ${channelId} not found`);
-        }
-      });
+  // Existing job for trading wisdom
+  schedule.scheduleJob({ hour: 9, minute: 58, tz: "America/New_York" }, () => {
+    channelIds.forEach((channelId) => {
+      const channel = client.channels.cache.get(channelId);
+      if (channel) {
+        sendRandomWisdom(channel);
+      } else {
+        console.error(`Channel with ID ${channelId} not found`);
+      }
+    });
+  });
+  console.log("Scheduled daily trading wisdom messages at 9:58 am EST");
+
+  // New job for the welcome message
+  const welcomeChannelId = "1334610731487858900"; // channel ID
+  schedule.scheduleJob({ hour: 9, minute: 15, tz: "America/New_York" }, () => {
+    const channel = client.channels.cache.get(welcomeChannelId);
+    if (channel) {
+      const welcomeMessage = `**Good morning and welcome @everyone!** :wave:  
+
+Take your time to explore the **trade alerts**—no need to feel overwhelmed by the volume.
+Focus on understanding them at your own pace.  
+
+Be sure to check **\`Read Me First\`** for the best experience!`;
+
+      channel.send(welcomeMessage);
+      console.log("Sent daily welcome message.");
+    } else {
+      console.error(`Channel with ID ${welcomeChannelId} not found`);
     }
-  );
-  console.log("Scheduled daily messages at 9:58 am EST");
+  });
+  console.log("Scheduled daily welcome message at 9:15 am EST");
 }
 
 // Bot ready event
