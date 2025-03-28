@@ -48,15 +48,15 @@ function scheduleDailyMessage() {
 
   // New job for the welcome message
   const welcomeChannelId = "1334610731487858900"; // channel ID
-  schedule.scheduleJob({ hour: 9, minute: 15, tz: "America/New_York" }, () => {
+  schedule.scheduleJob({ hour: 9, minute: 40, tz: "America/New_York" }, () => {
     const channel = client.channels.cache.get(welcomeChannelId);
     if (channel) {
-      const welcomeMessage = `**Good morning and welcome @everyone!** :wave:  
+      const welcomeMessage = `**Good morning and welcome @everyone!** :wave:
 
-Take your time to explore the **trade alerts**—no need to feel overwhelmed by the volume.
-Focus on understanding them at your own pace.  
+Take your time exploring the **trade alerts**—no need to feel overwhelmed.
+Focus on understanding them at your own pace.
 
-Be sure to check **\`Read Me First\`** for the best experience!`;
+Start with **\Read Me First\`** for the best experience!`;
 
       channel.send(welcomeMessage);
       console.log("Sent daily welcome message.");
@@ -64,7 +64,7 @@ Be sure to check **\`Read Me First\`** for the best experience!`;
       console.error(`Channel with ID ${welcomeChannelId} not found`);
     }
   });
-  console.log("Scheduled daily welcome message at 9:15 am EST");
+  console.log("Scheduled daily welcome message at 9:40 am EST");
 }
 
 // Bot ready event
